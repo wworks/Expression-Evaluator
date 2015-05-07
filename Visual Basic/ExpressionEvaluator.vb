@@ -40,7 +40,7 @@ Module ExpressionEvaluator
             ElseIf haop = letter Then
                 NumberOfBrackets += 1
                 temp &= letter
-                IsDone = True
+                IsDone = True 
             ElseIf hacl = letter Then
                 NumberOfBrackets -= 1
                 IsDone = True
