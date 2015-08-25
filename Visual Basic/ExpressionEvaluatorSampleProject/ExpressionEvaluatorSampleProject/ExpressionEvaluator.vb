@@ -1,4 +1,6 @@
-Module ExpressionEvaluator
+Imports System.Text.RegularExpressions
+
+Public Class ExpressionEvaluator
     Dim Digits() As Char = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}
     Dim opPlus As Char = "+"
     Dim opMinus As Char = "-"
@@ -6,25 +8,21 @@ Module ExpressionEvaluator
     Dim opDivide As Char = "/"
     Dim haop As Char = "("
     Dim hacl As Char = ")"
+    Dim VariablesDictionary As New Dictionary(Of String, String)
 
-    Sub Main()
-        While True
-            Console.Clear()
-            Console.WriteLine("Enter you expression:   Possible operators: * / + - brackets supported.")
-            Dim expression = Console.ReadLine
-            If expression <> "" Then
-                Try
-                    Console.WriteLine(Parser(expression))
-                Catch ex As Exception
-                    Console.WriteLine("Something went wrong, is your expression correct?")
-                End Try
+    Public Function VariableParser(Variables As String) As Dictionary(Of String, String)
+        VariablesDictionary.Clear()
+        Variables = Variables.Replace(" ", "")
+        Variables = Variables.Replace(vbNewLine, "")
+        Dim VariablesSplitted = Variables.Split("|")
+        For Each Expression As String In VariablesSplitted
+            Dim ExpressionSplitted = Expression.Split("=")
+            VariablesDictionary.Add(ExpressionSplitted(0), ExpressionSplitted(1))
 
-                Console.WriteLine("Press enter to do another expression.")
-                Console.Read()
-            End If
-        End While
-    End Sub
-    Private Function Parser(Expression As String) As Double
+        Next
+        Return VariablesDictionary
+    End Function
+    Public Function Parser(Expression As String) As Double
         Dim ExpressionList As New List(Of String)
         Dim possibleOperators As New List(Of Char)
         Dim NumberOfBrackets As Integer = 0
@@ -40,7 +38,7 @@ Module ExpressionEvaluator
             ElseIf haop = letter Then
                 NumberOfBrackets += 1
                 temp &= letter
-                IsDone = True 
+                IsDone = True
             ElseIf hacl = letter Then
                 NumberOfBrackets -= 1
                 IsDone = True
@@ -51,6 +49,23 @@ Module ExpressionEvaluator
                 IsDone = True
             ElseIf letter = "." Then
                 temp &= ","
+                IsDone = True
+            ElseIf Regex.IsMatch(letter, "[A-Za-z]") Then
+                Dim tempVar As String
+
+                For j = i To Expression.Length - 1
+                    If Regex.IsMatch(Expression(j), "[A-Za-z]") = False Then
+                        Expression = New String("|", j - i) & Expression.Remove(i, j - i)
+                        Exit For
+                    Else
+                        tempVar &= Expression(j)
+                    End If
+                Next
+                If VariablesDictionary.ContainsKey(tempVar) Then
+                    temp &= VariablesDictionary(tempVar)
+
+                End If
+                tempVar = ""
                 IsDone = True
             Else
                 If Not NumberOfBrackets = 0 Then
@@ -89,7 +104,7 @@ Module ExpressionEvaluator
         End If
         Return CalculateExpression(ExpressionList, possibleOperators)
     End Function
-    Private Function CalculateExpression(ExpressionList As List(Of String), possibleOperators As List(Of Char)) As Double
+    Public Function CalculateExpression(ExpressionList As List(Of String), possibleOperators As List(Of Char)) As Double
         If ExpressionList.Count = 3 Then
             If Not (ExpressionList(0).Contains(haop) Or ExpressionList(1).Contains(haop) Or ExpressionList(2).Contains(haop)) Then
                 Select Case ExpressionList(1)
@@ -105,9 +120,8 @@ Module ExpressionEvaluator
             End If
         End If
 
-        possibleOperators.Sort()
         Dim index = 0
-        While possibleOperators.BinarySearch(opTimes) > 0 Or possibleOperators.BinarySearch(opDivide) > 0
+        While possibleOperators.Contains(opTimes) Or possibleOperators.Contains(opDivide)
             index = 1
             While index <> ExpressionList.Count And ExpressionList.Count <> 1
                 If ExpressionList(index) = opTimes Then
@@ -125,7 +139,7 @@ Module ExpressionEvaluator
 
             End While
         End While
-        While possibleOperators.BinarySearch(opMinus) > 0 Or possibleOperators.BinarySearch(opPlus) > 0
+        While possibleOperators.Contains(opMinus) Or possibleOperators.Contains(opPlus)
             index = 1
             While index <> ExpressionList.Count And ExpressionList.Count <> 1
 
@@ -145,4 +159,4 @@ Module ExpressionEvaluator
         End While
         Return ExpressionList(0)
     End Function
-End Module
+End Class
